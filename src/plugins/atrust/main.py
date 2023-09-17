@@ -9,6 +9,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot.internal.matcher import Matcher
 from playwright.async_api import Browser, Page, BrowserContext, Error
 
+from api.atrust import url_to_proxy
 from .bean import Url
 from .browser import get_browser
 
@@ -57,7 +58,7 @@ class VPN:
                         f"https://at.njpi.edu.cn/?t={int(time.time() * 1000)}"
                     )
                     await asyncio.sleep(3)
-                    await page.request.get(f"http://www-baidu-com-s.atrust.njpi.edu.cn:443/")
+                    await page.request.get(url_to_proxy("https://www.baidu.com/"))
                 except Error:
                     logger.debug(f"atrust VPN保活失败")
                     return False

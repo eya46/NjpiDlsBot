@@ -1,6 +1,6 @@
 from enum import Enum
 
-from .tool import url_to_proxy
+from api.atrust import url_to_proxy
 
 
 class Url(Enum):

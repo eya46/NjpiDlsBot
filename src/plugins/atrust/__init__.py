@@ -11,7 +11,7 @@ from nonebot.permission import SUPERUSER
 from .bean import Url
 from .browser import get_browser
 from .main import VPN
-from .tool import url_to_proxy
+from api.atrust import url_to_proxy
 
 login_vpn = on_command("登录VPN", aliases={"登录vpn", "登陆VPN", "登陆vpn"})
 vpn_status = on_command("vpn状态", aliases={"VPN状态"}, permission=SUPERUSER)

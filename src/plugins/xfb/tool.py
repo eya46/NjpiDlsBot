@@ -2,7 +2,6 @@ import json
 import traceback
 from datetime import datetime, timedelta
 from typing import Union, List, Dict, Optional
-from urllib.parse import urlparse
 
 import httpx
 from httpx import ReadTimeout, AsyncClient, ConnectTimeout
@@ -14,17 +13,6 @@ from db import db, get_key
 
 async def get_ticket():
     return await get_key("xfb_ticket") or ""
-
-
-def url_to_proxy(url: str) -> str:
-    _ = urlparse(url)
-    return "http://{0}{1}{2}.atrust.njpi.edu.cn:443{3}{4}".format(
-        _.hostname.replace(".", "-"),
-        (f"-{_.port}-p" if _.port else ""),
-        ("-s" if _.scheme == "https" else ""),
-        (_.path if _.path else "/"),
-        (f"?{_.query}" if _.query else "")
-    )
 
 
 async def get_proxy(url: str, r: AsyncClient) -> Union[str, List[str]]:

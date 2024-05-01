@@ -2,51 +2,38 @@ from base64 import b64encode
 from typing import Annotated
 
 from fastapi import FastAPI
-from nonebot import on_command, get_app
-from nonebot.adapters.onebot.v11 import MessageSegment, Message
+from nonebot import get_app, logger, on_command
+from nonebot.adapters.onebot.v11 import Message, MessageSegment
 from nonebot.internal.params import ArgPlainText
 from nonebot.matcher import Matcher
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 
 from api import split, to_pic
-from .auto_xfb import *
+
 from .dfjl_tool import get_record_pic_bytes
-from .func import check_room, check_pay_money, check_pay_room, check_power_list, check_power, get_record_app
+from .func import (
+    check_pay_money,
+    check_pay_room,
+    check_power,
+    check_power_list,
+    get_record_app,
+)
 from .getInfo import yue
 from .moneyTool import pay_money
 from .payElect import pay as pay_elect
-from .tool import *
 
-power = on_command(
-    "查电费",
-    aliases={"查电费", "cdf"}
-)
+power = on_command("查电费", aliases={"查电费", "cdf"})
 
-pay = on_command(
-    "充电费",
-    aliases={
-        "充电费"
-    }, permission=SUPERUSER
-)
+pay = on_command("充电费", aliases={"充电费"}, permission=SUPERUSER)
 
-c_yue = on_command(
-    "查余额", permission=SUPERUSER
-)
+c_yue = on_command("查余额", permission=SUPERUSER)
 
-chong_yue = on_command(
-    "充余额", permission=SUPERUSER
-)
+chong_yue = on_command("充余额", permission=SUPERUSER)
 
-power_list = on_command(
-    "dfjl",
-    aliases={"电费记录"}
-)
+power_list = on_command("dfjl", aliases={"电费记录"})
 
-power_chart = on_command(
-    "dfb",
-    aliases={"电费表"}
-)
+power_chart = on_command("dfb", aliases={"电费表"})
 
 __plugin_name__ = "查电费"
 
@@ -86,7 +73,7 @@ async def _(matcher: Matcher, args: Annotated[Message, CommandArg()]):
 
 
 @power_list.got("room", prompt="请输入房间号:")
-async def get_room(matcher: Matcher, args: Annotated[str, ArgPlainText("room")]):
+async def power_get_room(matcher: Matcher, args: Annotated[str, ArgPlainText("room")]):
     await check_power_list(matcher, args)
 
 
@@ -98,14 +85,10 @@ async def _(matcher: Matcher, args: Annotated[Message, CommandArg()]):
 
 
 @power_chart.got("room", prompt="请输入房间号:")
-async def get_room(matcher: Matcher, room: Annotated[str, ArgPlainText("room")]):
+async def power_chart_get_room(matcher: Matcher, room: Annotated[str, ArgPlainText("room")]):
     data = await get_record_pic_bytes(room)
     if data:
-        await matcher.send(
-            MessageSegment.image(
-                data
-            )
-        )
+        await matcher.send(MessageSegment.image(data))
     else:
         await matcher.send(f"该房间的电费记录过少:{room}", at_sender=True)
 
@@ -126,13 +109,13 @@ async def chong_yue_handle(args: Annotated[Message, CommandArg()]):
         _res = await pay_money(_money)
         logger.debug(_res)
         now_money = await yue("11451")
-        await chong_yue.send(to_pic(
-            f"充余额:{_money / 100}",
-            f"原余额:\n\n{raw_money}\n\n"
-            f"结果:{_res}\n\n"
-            f"现余额:\n\n{now_money}"
-        ))
-    except Exception as e:
+        await chong_yue.send(
+            to_pic(
+                f"充余额:{_money / 100}",
+                f"原余额:\n\n{raw_money}\n\n" f"结果:{_res}\n\n" f"现余额:\n\n{now_money}",
+            )
+        )
+    except Exception:
         await chong_yue.finish(f"余额解析失败,输入值:{args.extract_plain_text()}", at_sender=True)
 
 
@@ -155,20 +138,21 @@ async def pay_handle(matcher: Matcher, args: Annotated[Message, CommandArg()]):
 
     if room == "":
         await matcher.finish(f"请输入正确的房间号,你的输入:{' '.join(args)}", at_sender=True)
-        return
     if _money == 0:
-        await matcher.finish(f"请输入正确的金额(大于0.01,小于50),你的输入:{' '.join(args)}", at_sender=True)
-        return
+        await matcher.finish(
+            f"请输入正确的金额(大于0.01,小于50),你的输入:{' '.join(args)}",
+            at_sender=True,
+        )
     matcher.set_arg("room", Message(str(room)))
     matcher.set_arg("money", Message(str(_money)))
     await matcher.send(
         f"即将给 {room} 充值 {_money} 元电费,确定吗?\n确定回复:确定, 其余回复为取消充电费",
-        at_sender=True
+        at_sender=True,
     )
 
 
 @pay.got("confirm")
-async def pay_handle(matcher: Matcher, args: Annotated[str, ArgPlainText("confirm")]):
+async def pay_confirm(matcher: Matcher, args: Annotated[str, ArgPlainText("confirm")]):
     if args == "确定":
         room = matcher.get_arg("room").extract_plain_text()
         money = float(matcher.get_arg("money").extract_plain_text())

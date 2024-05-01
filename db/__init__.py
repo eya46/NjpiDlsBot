@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 
 from gino import Gino
 from nonebot import logger
@@ -25,7 +25,7 @@ async def get_key(key: str) -> Optional[str]:
         return _key.value
 
 
-async def all_keys() -> List[str]:
+async def all_keys() -> list[str]:
     keys = await Key.query.gino.all()
     return [i.key for i in keys]
 
@@ -56,15 +56,13 @@ async def close_db():
     await db.pop_bind().close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import asyncio
-
 
     async def test():
         await link_db()
         print(await get_key("宿舍打扫"))
 
         await close_db()
-
 
     loop = asyncio.run(test())

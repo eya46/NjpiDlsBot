@@ -15,10 +15,10 @@ def pay_test(money: int):
     return httpx.post(
         "http://ykt.njpi.edu.cn/User/Account_Pay",
         headers={
-            "Cookie": f"hallticket=114514;sourcetypeticket=114514",
+            "Cookie": "hallticket=114514;sourcetypeticket=114514",
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "X-Requested-With": "XMLHttpRequest",
-            "Referer": "http://ykt.njpi.edu.cn/PPage/ComePage?flowID=13"
+            "Referer": "http://ykt.njpi.edu.cn/PPage/ComePage?flowID=13",
         },
         data={
             "account": "114514",
@@ -31,20 +31,21 @@ def pay_test(money: int):
             "paymethod": "",
             "iacctype": "acc",
             "spbill_create_ip": "",
-            "json": "true"
+            "json": "true",
         },
-        proxies={'http://': 'http://114514', 'https://': 'http://114514'}
+        proxies={"http://": "http://114514", "https://": "http://114514"},
     )
 
 
 async def pay_money(money: int):
     url = Pay_Url
     proxy = await get_proxy_http(url=url)
-    if type(proxy) == str:
+    if isinstance(proxy, str):
         return proxy
     async with (
-            httpx.AsyncClient(verify=False, proxies=proxy) if proxy.get("type", "proxy") == "proxy"
-            else httpx.AsyncClient(verify=False)
+        httpx.AsyncClient(verify=False, proxies=proxy)
+        if proxy.get("type", "proxy") == "proxy"
+        else httpx.AsyncClient(verify=False)
     ) as r:
         r: AsyncClient
         tk = await get_ticket()
@@ -54,7 +55,7 @@ async def pay_money(money: int):
                 "Cookie": f"hallticket={tk}; sourcetypeticket={tk}; {proxy.get('cookie')}",
                 "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
                 "X-Requested-With": "XMLHttpRequest",
-                "Referer": Pay_Url_Referer
+                "Referer": Pay_Url_Referer,
             },
             data={
                 "account": "11451",
@@ -67,8 +68,8 @@ async def pay_money(money: int):
                 "paymethod": "",
                 "iacctype": "acc",
                 "spbill_create_ip": "",
-                "json": "true"
-            }
+                "json": "true",
+            },
         )
         try:
             _ = res.json()["Msg"]
@@ -78,9 +79,7 @@ async def pay_money(money: int):
             return "解析失败"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import asyncio
 
-    print(asyncio.get_event_loop().run_until_complete(
-        pay_money(1)
-    ))
+    print(asyncio.get_event_loop().run_until_complete(pay_money(1)))

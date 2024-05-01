@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import nonebot
 from nonebot.adapters.onebot.v11 import Adapter as ONEBOT_V11Adapter
-
-from nonebot.log import logger, default_format
+from nonebot.log import default_format, logger
 
 logger.add(
     "log/error.log",
     rotation="00:00",
     diagnose=False,
     level="ERROR",
-    format=default_format
+    format=default_format,
 )
 
-from db import link_db, close_db
+from db import close_db, link_db
 
 nonebot.init()
 app = nonebot.get_asgi()

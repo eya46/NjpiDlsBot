@@ -1,10 +1,10 @@
-from typing import Optional, Annotated
+from typing import Annotated, Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from nonebot import require, get_bot, on_command
+from nonebot import get_bot, on_command, require
+from nonebot.adapters.onebot.v11 import Bot, Message
 from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
-from nonebot.adapters.onebot.v11 import Bot, Message
 from nonebot.rule import to_me
 
 from db import get_key
@@ -12,7 +12,7 @@ from db import get_key
 scheduler: AsyncIOScheduler = require("nonebot_plugin_apscheduler").scheduler
 
 
-@scheduler.scheduled_job('cron', day="*", hour=0, minute=1, name="自动群打卡", timezone='Asia/Shanghai')
+@scheduler.scheduled_job("cron", day="*", hour=0, minute=1, name="自动群打卡", timezone="Asia/Shanghai")
 async def scheduler_sign(default_bot: Optional[Bot] = None, if_return: bool = False) -> Optional[list]:
     if default_bot is None:
         bot: Optional[Bot] = get_bot()

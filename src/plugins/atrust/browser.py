@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import Optional
+
 from playwright.async_api import Browser, async_playwright
 
 _browser: Optional[Browser] = None
@@ -13,7 +14,7 @@ async def init(**kwargs) -> Optional[Browser]:
     try:
         _browser = await browser.chromium.launch(**kwargs)
         return _browser
-    except Exception as e:
+    except Exception:
         # logger.warning(f"启动chromium发生错误 {type(e)}：{e}")
         await asyncio.get_event_loop().run_in_executor(None, install)
         _browser = await browser.chromium.launch(**kwargs)
@@ -28,8 +29,9 @@ def install():
     """自动安装、更新 Chromium"""
     print("正在检查 Chromium 更新")
     import sys
+
     from playwright.__main__ import main
-    
+
     sys.argv = ["", "install", "chromium"]
     try:
         main()

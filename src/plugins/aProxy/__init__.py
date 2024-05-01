@@ -18,6 +18,6 @@ async def get_proxy(data: dict):
         "success": 0,
         "data": {
             "http://": "http://eya46:eya46eya46@127.0.0.1:1145141919",
-            "https://": "http://eya46:eya46eya46@127.0.0.1:1145141919"
-        }
+            "https://": "http://eya46:eya46eya46@127.0.0.1:1145141919",
+        },
     }

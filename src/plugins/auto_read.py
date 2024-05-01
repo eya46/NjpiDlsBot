@@ -1,5 +1,5 @@
 from nonebot import on_message
-from nonebot.adapters.onebot.v11 import MessageEvent, Bot
+from nonebot.adapters.onebot.v11 import Bot, MessageEvent
 
 read = on_message(block=False, priority=99)
 

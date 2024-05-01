@@ -1,16 +1,13 @@
 from datetime import datetime, timedelta
-from typing import List
 
 from nonebot.adapters.onebot.v11 import Message, MessageEvent
 from nonebot.internal.params import Depends
 
-from .pic import Txt2Img, to_pic, to_img
 
-
-def split(txt, split_by=(" ", ",")) -> List[str]:
+def split(txt, split_by=(" ", ",")) -> list[str]:
     _temp = ""
     _res = []
-    
+
     for _i in str(txt):
         if _i in split_by:
             if _temp == "":
@@ -30,15 +27,15 @@ def get_args(message: Message):
 
 
 def next_day(day: int):
-    return (datetime.now() + timedelta(days=day)).strftime('%Y-%m-%d %H:%M')
+    return (datetime.now() + timedelta(days=day)).strftime("%Y-%m-%d %H:%M")
 
 
 def next_minutes(minutes: int):
-    return (datetime.now() + timedelta(minutes=minutes)).strftime('%Y-%m-%d %H:%M')
+    return (datetime.now() + timedelta(minutes=minutes)).strftime("%Y-%m-%d %H:%M")
 
 
 def ArgList(*args, **kwargs):
     async def _(event: MessageEvent):
         return split(str(event.message), *args, **kwargs)
-    
+
     return Depends(_)

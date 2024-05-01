@@ -6,21 +6,11 @@ from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 
 from api import split
-from db import set_key, get_key, all_keys
+from db import all_keys, get_key, set_key
 
-key_set = on_command(
-    "key", permission=SUPERUSER
-)
+key_set = on_command("key", permission=SUPERUSER)
 
-key_all = on_command(
-    "所有key",
-    aliases={
-        "all_key",
-        "allkey",
-        "keys"
-    },
-    permission=SUPERUSER
-)
+key_all = on_command("所有key", aliases={"all_key", "allkey", "keys"}, permission=SUPERUSER)
 
 
 @key_all.handle()

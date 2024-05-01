@@ -62,7 +62,7 @@ class PayElect:
             "areaid": area_id,
             "areaname": area_name,
             "qpwd": "",
-            "json": "true"
+            "json": "true",
         }
 
         return post_data
@@ -81,7 +81,7 @@ class PayElect:
             return True
 
     @classmethod
-    def check_money(cls, money: Union[str, int, float]):
+    def check_money(cls, money: Union[str, float]):
         if isinstance(money, str):
             try:
                 money = float(money)
@@ -93,7 +93,7 @@ class PayElect:
         else:
             return True
 
-    async def call_sync(self, room: Union[str, int], money: Union[str, int, float]) -> Union[httpx.Response, str]:
+    async def call_sync(self, room: Union[str, int], money: Union[str, float]) -> Union[httpx.Response, str]:
         if not self.check_room(room):
             raise Exception("房间号错误！")
         if not self.check_money(money):
@@ -101,22 +101,25 @@ class PayElect:
         room = str(room)
         money = float(money)
 
-        main_url = f"http://ykt.njpi.edu.cn:8988/web/common/checkEle.html?ticket={self.ticket}&from=ehall" \
-                   f"&cometype=&timestamp=" + datetime.now().strftime("%Y%m%d%H%M%S320")
+        main_url = (
+            f"http://ykt.njpi.edu.cn:8988/web/common/checkEle.html?ticket={self.ticket}&from=ehall"
+            f"&cometype=&timestamp=" + datetime.now().strftime("%Y%m%d%H%M%S320")
+        )
         proxy = await get_proxy_http(url=main_url)
 
-        if type(proxy) == str:
+        if isinstance(proxy, str):
             raise Exception(proxy)
 
         async with (
-                httpx.AsyncClient(verify=False, proxies=proxy) if proxy.get("type", "proxy") == "proxy"
-                else httpx.AsyncClient(verify=False)
+            httpx.AsyncClient(verify=False, proxies=proxy)
+            if proxy.get("type", "proxy") == "proxy"
+            else httpx.AsyncClient(verify=False)
         ) as client:
             client: httpx.AsyncClient
 
             _resp = await client.get(
-                main_url if proxy.get("type", "proxy") == "proxy" else proxy.get("url")
-                , headers={"Cookie": f"hallticket={self.ticket}; {proxy.get('cookie')}"}
+                main_url if proxy.get("type", "proxy") == "proxy" else proxy.get("url"),
+                headers={"Cookie": f"hallticket={self.ticket}; {proxy.get('cookie')}"},
             )
             client.cookies.extract_cookies(_resp)
             JSESSIONID = client.cookies.get("JSESSIONID")
@@ -133,9 +136,9 @@ class PayElect:
                     "X-Requested-With": "XMLHttpRequest",
                     "Referer": main_url if proxy.get("type", "proxy") == "proxy" else proxy.get("url"),
                     "Cookie": f"JSESSIONID={JSESSIONID}; hallticket={self.ticket}; "
-                              f"sourcetypeticket={self.ticket}; {new_proxy.get('cookie')}"
+                    f"sourcetypeticket={self.ticket}; {new_proxy.get('cookie')}",
                 },
-                data=self._build_data(room, money)
+                data=self._build_data(room, money),
             )
 
     @classmethod
@@ -149,10 +152,10 @@ class PayElect:
         except:
             return "充值结果解析失败"
 
-    async def main_sync(self, room: Union[str, int], money: Union[str, int, float]) -> str:
+    async def main_sync(self, room: Union[str, int], money: Union[str, float]) -> str:
         try:
             resp = await self.call_sync(room, money)
-            if type(resp) == "str":
+            if isinstance(resp, str):
                 return resp
             else:
                 return self.resp_to_str(resp)
@@ -191,22 +194,24 @@ def data_deal(room: str, money: float):
         areaid = "主校区"
         areaname = "主校区"
 
-    post_data = "acctype=###&" \
-                "paytype=1&" \
-                f"aid={aid}&" \
-                "account=36853&" \
-                f"tran={money}&" \
-                f"roomid={roomid}&" \
-                f"room={_room}&" \
-                f"floorid={floorid}&" \
-                "floor=&" \
-                f"buildingid={buildingid}&" \
-                f"building={building}&" \
-                f"areaid={areaid}&" \
-                f"areaname={areaname}&" \
-                "qpwd=&json=true"
+    post_data = (
+        "acctype=###&"
+        "paytype=1&"
+        f"aid={aid}&"
+        "account=36853&"
+        f"tran={money}&"
+        f"roomid={roomid}&"
+        f"room={_room}&"
+        f"floorid={floorid}&"
+        "floor=&"
+        f"buildingid={buildingid}&"
+        f"building={building}&"
+        f"areaid={areaid}&"
+        f"areaname={areaname}&"
+        "qpwd=&json=true"
+    )
     # print(post_data)
-    return post_data.encode('utf-8')
+    return post_data.encode("utf-8")
 
 
 async def pay(room: Union[str, int], money: float):
@@ -214,5 +219,5 @@ async def pay(room: Union[str, int], money: float):
     return await api.main_sync(room, money)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(pay(1145, 0.01))

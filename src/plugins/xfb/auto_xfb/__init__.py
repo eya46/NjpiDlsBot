@@ -1,10 +1,16 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from nonebot import on_command, require, get_bot
-from nonebot.adapters.onebot.v11 import MessageEvent, Message, PrivateMessageEvent, GroupMessageEvent, MessageSegment, \
-    Bot
+from nonebot import get_bot, on_command, require
+from nonebot.adapters.onebot.v11 import (
+    Bot,
+    GroupMessageEvent,
+    Message,
+    MessageEvent,
+    MessageSegment,
+    PrivateMessageEvent,
+)
 from nonebot.adapters.onebot.v11.helpers import HandleCancellation
 from nonebot.internal.matcher import Matcher
 from nonebot.internal.params import ArgPlainText
@@ -12,11 +18,12 @@ from nonebot.params import CommandArg
 from nonebot.permission import SUPERUSER
 from sqlalchemy import and_
 
-from api import split, Txt2Img
+from api import Txt2Img, split
 from db import get_key
-from .bean import AutoPower
+
 from ..func import check_room, get_record_app
 from ..tool import getLastRecord
+from .bean import AutoPower
 
 scheduler: AsyncIOScheduler = require("nonebot_plugin_apscheduler").scheduler
 
@@ -34,7 +41,7 @@ help_pic = None
 
 
 @dydf_test.handle()
-@scheduler.scheduled_job("interval", seconds=30, timezone='Asia/Shanghai', name="电费订阅~~~~")
+@scheduler.scheduled_job("interval", seconds=30, timezone="Asia/Shanghai", name="电费订阅~~~~")
 async def auto_send_power():
     if await get_key("电费订阅") == "off":
         return
@@ -52,12 +59,14 @@ async def auto_send_power():
 
     now_time_int = now_time.hour * 60 * 60 + now_time.minute * 60 + now_time.second
 
-    powers: List[AutoPower] = await AutoPower.query.where(and_(
-        AutoPower.time >= now_time_int - 120,
-        AutoPower.time <= now_time_int + 120,
-        AutoPower.status == True,
-        AutoPower.last_action_time <= datetime.now().date()
-    )).gino.all()
+    powers: list[AutoPower] = await AutoPower.query.where(
+        and_(
+            AutoPower.time >= now_time_int - 120,
+            AutoPower.time <= now_time_int + 120,
+            AutoPower.status is True,
+            AutoPower.last_action_time <= datetime.now().date(),
+        )
+    ).gino.all()
 
     for power in powers:
         try:
@@ -70,25 +79,26 @@ async def auto_send_power():
         try:
             if elect > power.limit:
                 continue
-            difference = f"距{last_record.time.strftime('%m-%d %H:%M')}" \
-                         f"相差{round(elect - float(last_record.power), 2)}度\n" if last_record and last_record != -99999 else ""
+            difference = (
+                f"距{last_record.time.strftime('%m-%d %H:%M')}" f"相差{round(elect - float(last_record.power), 2)}度\n"
+                if last_record and last_record != -99999
+                else ""
+            )
             if bot:
                 if power.type == "group":
                     await bot.send_group_msg(
                         group_id=int(power.from_id),
-                        message=f"房间号:{power.room}\n{difference}(如要修改请发送:订阅电费帮助)\n\n{res}"
+                        message=f"房间号:{power.room}\n{difference}(如要修改请发送:订阅电费帮助)\n\n{res}",
                     )
                 if power.type == "private":
                     await bot.send_private_msg(
                         user_id=int(power.from_id),
-                        message=f"房间号:{power.room}\n{difference}(如要修改请发送:订阅电费帮助)\n\n{res}"
+                        message=f"房间号:{power.room}\n{difference}(如要修改请发送:订阅电费帮助)\n\n{res}",
                     )
         except:
             continue
         finally:
-            await power.update(
-                times=power.times + 1, last_action_time=datetime.now()
-            ).apply()
+            await power.update(times=power.times + 1, last_action_time=datetime.now()).apply()
 
 
 @dydf_help.handle()
@@ -96,23 +106,25 @@ async def dydf_help_handle(matcher: Matcher):
     global help_pic
     if help_pic is None:
         to_img = Txt2Img()
-        help_pic = MessageSegment.image(to_img.save(
-            "电费订阅帮助",
-            "-----------------------------\n"
-            "订阅电费，每天定时发送房间的电费，详细功能看下方\n"
-            "-----------------------------\n"
-            "0.订阅电费 -> 订阅电费 房间号\n"
-            "   例:订阅电费 1234\n"
-            "1.电费订阅记录 -> 电费订阅记录\n"
-            "2.更新电费订阅 -> 更新电费订阅\n"
-            "   (修改电费订阅提醒时间，设置为发消息的时间，精度±10s)\n"
-            "3.修改电费订阅 -> 修改电费订阅\n"
-            "   (修改限额，当电费高于该数就不发送信息)\n"
-            "4.删除电费订阅 -> 删除电费订阅\n"
-            "   （字面意思，是删除不是暂停)\n"
-            "5.开启电费订阅 -> 开启电费订阅\n"
-            "6.关闭电费订阅 -> 关闭电费订阅"
-        ))
+        help_pic = MessageSegment.image(
+            to_img.save(
+                "电费订阅帮助",
+                "-----------------------------\n"
+                "订阅电费，每天定时发送房间的电费，详细功能看下方\n"
+                "-----------------------------\n"
+                "0.订阅电费 -> 订阅电费 房间号\n"
+                "   例:订阅电费 1234\n"
+                "1.电费订阅记录 -> 电费订阅记录\n"
+                "2.更新电费订阅 -> 更新电费订阅\n"
+                "   (修改电费订阅提醒时间，设置为发消息的时间，精度±10s)\n"
+                "3.修改电费订阅 -> 修改电费订阅\n"
+                "   (修改限额，当电费高于该数就不发送信息)\n"
+                "4.删除电费订阅 -> 删除电费订阅\n"
+                "   （字面意思，是删除不是暂停)\n"
+                "5.开启电费订阅 -> 开启电费订阅\n"
+                "6.关闭电费订阅 -> 关闭电费订阅",
+            )
+        )
     await matcher.send(help_pic)
 
 
@@ -136,21 +148,25 @@ async def dydf_list(matcher: Matcher, event: MessageEvent):
     if _type not in ["group", "private"]:
         await matcher.finish("不支持的订阅来源", at_sender=True)
 
-    powers = await AutoPower.query.where(and_(
-        AutoPower.type == _type,
-        AutoPower.from_id == from_id
-    )).gino.all()
+    powers = await AutoPower.query.where(and_(AutoPower.type == _type, AutoPower.from_id == from_id)).gino.all()
 
     if len(powers) == 0:
         await matcher.finish("无电费订阅记录", at_sender=True)
 
     tool = Txt2Img()
-    pic_str = tool.save("订阅表", "\n\n".join([
-        f"{index + 1}.房间号:{i.room} 状态:{'开启' if i.status else '关闭'}\n"
-        f"  时间: {i.time // 3600}:{(i.time % 3600) // 60}:{(i.time % 3600) % 60} 次数:{i.times} 订阅者:{i.user_id}\n"
-        f"  上次检查:{i.last_action_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-        f"  限制:{i.limit}度(电费高于这个值不会提醒)" for index, i in enumerate(powers)
-    ]))
+    pic_str = tool.save(
+        "订阅表",
+        "\n\n".join(
+            [
+                f"{index + 1}.房间号:{i.room} 状态:{'开启' if i.status else '关闭'}\n"
+                f"  时间: {i.time // 3600}:{(i.time % 3600) // 60}:{(i.time % 3600) % 60} 次数:{i.times} "
+                f"订阅者:{i.user_id}\n"
+                f"  上次检查:{i.last_action_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"  限制:{i.limit}度(电费高于这个值不会提醒)"
+                for index, i in enumerate(powers)
+            ]
+        ),
+    )
 
     await matcher.send(MessageSegment.image(pic_str))
 
@@ -191,21 +207,32 @@ async def open_dydf_got_room(matcher: Matcher, event: MessageEvent, room: str = 
     if _type not in ["group", "private"]:
         await matcher.finish("不支持的订阅来源", at_sender=True)
 
-    if len(await AutoPower.query.where(and_(
-            AutoPower.type == _type,
-            AutoPower.room == room,
-            AutoPower.from_id == from_id
-    )).gino.all()) == 0:
+    if (
+        len(
+            await AutoPower.query.where(
+                and_(
+                    AutoPower.type == _type,
+                    AutoPower.room == room,
+                    AutoPower.from_id == from_id,
+                )
+            ).gino.all()
+        )
+        == 0
+    ):
         await matcher.finish(f"未订阅该房间:{room}", at_sender=True)
 
     try:
-        await AutoPower.update.values(
-            status=True
-        ).where(and_(
-            AutoPower.room == room,
-            AutoPower.from_id == from_id,
-            AutoPower.type == _type
-        )).gino.status()
+        await (
+            AutoPower.update.values(status=True)
+            .where(
+                and_(
+                    AutoPower.room == room,
+                    AutoPower.from_id == from_id,
+                    AutoPower.type == _type,
+                )
+            )
+            .gino.status()
+        )
         await matcher.send(f"开启成功:{room}", at_sender=True)
     except Exception as e:
         await matcher.send(f"开启失败:{e}", at_sender=True)
@@ -247,21 +274,32 @@ async def close_dydf_got_room(matcher: Matcher, event: MessageEvent, room: str =
     if _type not in ["group", "private"]:
         await matcher.finish("不支持的订阅来源", at_sender=True)
 
-    if len(await AutoPower.query.where(and_(
-            AutoPower.type == _type,
-            AutoPower.room == room,
-            AutoPower.from_id == from_id
-    )).gino.all()) == 0:
+    if (
+        len(
+            await AutoPower.query.where(
+                and_(
+                    AutoPower.type == _type,
+                    AutoPower.room == room,
+                    AutoPower.from_id == from_id,
+                )
+            ).gino.all()
+        )
+        == 0
+    ):
         await matcher.finish(f"未订阅该房间:{room}", at_sender=True)
 
     try:
-        await AutoPower.update.values(
-            status=False
-        ).where(and_(
-            AutoPower.room == room,
-            AutoPower.from_id == from_id,
-            AutoPower.type == _type
-        )).gino.status()
+        await (
+            AutoPower.update.values(status=False)
+            .where(
+                and_(
+                    AutoPower.room == room,
+                    AutoPower.from_id == from_id,
+                    AutoPower.type == _type,
+                )
+            )
+            .gino.status()
+        )
         await matcher.send(f"关闭成功:{room}", at_sender=True)
     except Exception as e:
         await matcher.send(f"关闭失败:{e}", at_sender=True)
@@ -274,11 +312,18 @@ async def change_dydf_handle(matcher: Matcher, event: MessageEvent, args: Messag
             _type = "private"
             from_id = event.get_user_id()
             user_id = event.get_user_id()
-            if len((powers := await AutoPower.query.where(and_(
-                    AutoPower.type == _type,
-                    AutoPower.from_id == from_id,
-                    AutoPower.user_id == user_id
-            )).gino.all())) == 1:
+            if (
+                len(
+                    powers := await AutoPower.query.where(
+                        and_(
+                            AutoPower.type == _type,
+                            AutoPower.from_id == from_id,
+                            AutoPower.user_id == user_id,
+                        )
+                    ).gino.all()
+                )
+                == 1
+            ):
                 matcher.set_arg("room", Message(powers[0].room))
     except:
         pass
@@ -293,7 +338,9 @@ async def change_dydf_handle(matcher: Matcher, event: MessageEvent, args: Messag
 
 @change_dydf.got("room", "请输入房间号:")
 async def change_dydf_got_room(
-        matcher: Matcher, room: str = ArgPlainText("room"), cancel=HandleCancellation("取消成功")
+    matcher: Matcher,
+    room: str = ArgPlainText("room"),
+    cancel=HandleCancellation("取消成功"),
 ):
     try:
         matcher.set_arg("room", Message(check_room(room)))
@@ -303,8 +350,11 @@ async def change_dydf_got_room(
 
 @change_dydf.got("power", "请输入电费限制，整数:")
 async def change_dydf_got_power(
-        matcher: Matcher, event: MessageEvent, room: str = ArgPlainText("room"),
-        power: str = ArgPlainText("power"), cancel=HandleCancellation("取消成功")
+    matcher: Matcher,
+    event: MessageEvent,
+    room: str = ArgPlainText("room"),
+    power: str = ArgPlainText("power"),
+    cancel=HandleCancellation("取消成功"),
 ):
     if power.isdigit():
         power = int(power)
@@ -332,13 +382,17 @@ async def change_dydf_got_power(
         await matcher.finish("不支持的订阅来源", at_sender=True)
 
     try:
-        await AutoPower.update.values(
-            limit=power
-        ).where(and_(
-            AutoPower.room == room,
-            AutoPower.from_id == from_id,
-            AutoPower.type == _type
-        )).gino.status()
+        await (
+            AutoPower.update.values(limit=power)
+            .where(
+                and_(
+                    AutoPower.room == room,
+                    AutoPower.from_id == from_id,
+                    AutoPower.type == _type,
+                )
+            )
+            .gino.status()
+        )
         await matcher.send(f"更新成功:{room},{power}度", at_sender=True)
     except Exception as e:
         await matcher.send(f"更新成功失败:{e}", at_sender=True)
@@ -382,11 +436,13 @@ async def del_dydf_got_room(matcher: Matcher, event: MessageEvent, room: str = A
         await matcher.finish("不支持的订阅来源", at_sender=True)
 
     try:
-        length = await AutoPower.delete.where(and_(
-            AutoPower.type == _type,
-            AutoPower.from_id == from_id,
-            AutoPower.room == room
-        )).gino.status()
+        length = await AutoPower.delete.where(
+            and_(
+                AutoPower.type == _type,
+                AutoPower.from_id == from_id,
+                AutoPower.room == room,
+            )
+        ).gino.status()
         if isinstance(length, int) and length > 0:
             await matcher.send("删除成功!", at_sender=True)
         else:
@@ -417,10 +473,7 @@ async def update_dydf_handle(matcher: Matcher, event: MessageEvent):
     if _type not in ["group", "private"]:
         await matcher.finish("不支持的订阅来源", at_sender=True)
 
-    powers = await AutoPower.query.where(and_(
-        AutoPower.type == _type,
-        AutoPower.from_id == from_id
-    )).gino.all()
+    powers = await AutoPower.query.where(and_(AutoPower.type == _type, AutoPower.from_id == from_id)).gino.all()
 
     if _type == "group":
         if len(powers) == 1:
@@ -462,13 +515,17 @@ async def update_dydf_got_room(matcher: Matcher, event: MessageEvent, room: str 
     now_time_int = now_time.hour * 60 * 60 + now_time.minute * 60 + now_time.second
 
     try:
-        await AutoPower.update.values(
-            time=now_time_int
-        ).where(and_(
-            AutoPower.room == room,
-            AutoPower.from_id == from_id,
-            AutoPower.type == _type
-        )).gino.status()
+        await (
+            AutoPower.update.values(time=now_time_int)
+            .where(
+                and_(
+                    AutoPower.room == room,
+                    AutoPower.from_id == from_id,
+                    AutoPower.type == _type,
+                )
+            )
+            .gino.status()
+        )
         await matcher.send("更新订阅成功", at_sender=True)
     except:
         await matcher.send("更新订阅失败", at_sender=True)
@@ -518,28 +575,39 @@ async def dydf_got_room(matcher: Matcher, event: MessageEvent, room: str = ArgPl
 
     now_time_int = now_time.hour * 60 * 60 + now_time.minute * 60 + now_time.second
 
-    if len(await AutoPower.query.where(and_(
-            AutoPower.type == _type,
-            AutoPower.room == room,
-            AutoPower.from_id == from_id
-    )).gino.all()) > 0:
+    if (
+        len(
+            await AutoPower.query.where(
+                and_(
+                    AutoPower.type == _type,
+                    AutoPower.room == room,
+                    AutoPower.from_id == from_id,
+                )
+            ).gino.all()
+        )
+        > 0
+    ):
         await matcher.finish(f"已订阅该房间电费:{room}", at_sender=True)
 
-    powers = await AutoPower.query.where(and_(
-        AutoPower.type == _type,
-        AutoPower.from_id == from_id
-    )).gino.all()
+    powers = await AutoPower.query.where(and_(AutoPower.type == _type, AutoPower.from_id == from_id)).gino.all()
     if _type == "group":
         if len(powers) >= 3:
-            await matcher.finish(f"订阅房间不能超过3个:{','.join([i.room for i in powers])}", at_sender=True)
+            await matcher.finish(
+                f"订阅房间不能超过3个:{','.join([i.room for i in powers])}",
+                at_sender=True,
+            )
     elif _type == "private":
         if len(powers) > 0:
-            await matcher.finish(f"私聊只能订阅一个宿舍", at_sender=True)
+            await matcher.finish("私聊只能订阅一个宿舍", at_sender=True)
 
     try:
         await AutoPower.create(
-            room=room, type=_type, from_id=from_id, user_id=user_id, time=now_time_int,
-            last_action_time=datetime(year=1999, day=1, month=1)
+            room=room,
+            type=_type,
+            from_id=from_id,
+            user_id=user_id,
+            time=now_time_int,
+            last_action_time=datetime(year=1999, day=1, month=1),
         )
         await matcher.send(f"订阅成功:{room}", at_sender=True)
     except Exception as e:

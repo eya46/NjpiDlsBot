@@ -1,12 +1,12 @@
 import json
 import traceback
 from datetime import datetime, timedelta
-from typing import Union, List, Dict, Optional
+from typing import Optional, Union
 
 import httpx
-from httpx import ReadTimeout, AsyncClient, ConnectTimeout
+from httpx import AsyncClient, ConnectTimeout, ReadTimeout
 from nonebot import logger
-from sqlalchemy import Column, String, DateTime, Integer, and_, desc
+from sqlalchemy import Column, DateTime, Integer, String, and_, desc
 
 from db import db, get_key
 
@@ -15,7 +15,7 @@ async def get_ticket():
     return await get_key("xfb_ticket") or ""
 
 
-async def get_proxy(url: str, r: AsyncClient) -> Union[str, List[str]]:
+async def get_proxy(url: str, r: AsyncClient) -> Union[str, list[str]]:
     resp = await r.post("http://127.0.0.1:5750/proxy", json={"url": url, "key": "eya46_proxy_school"})
     data = resp.json()
     if data["success"] == 0:
@@ -24,33 +24,41 @@ async def get_proxy(url: str, r: AsyncClient) -> Union[str, List[str]]:
         return data["msg"]
 
 
-async def get_proxy_http(r: Optional[AsyncClient] = None, url="https://www.baidu.com") -> Union[str, Dict[str, str]]:
+async def get_proxy_http(r: Optional[AsyncClient] = None, url="https://www.baidu.com") -> Union[str, dict[str, str]]:
     try:
         if (await get_key("proxy_type")) == "atrust":
             if r:
                 resp = await r.post(
-                    "http://127.0.0.1:5750/atrust/proxy", json={"url": url, "key": "eya46_proxy_school"}
+                    "http://127.0.0.1:5750/atrust/proxy",
+                    json={"url": url, "key": "eya46_proxy_school"},
                 )
             else:
                 async with httpx.AsyncClient() as r:
                     resp = await r.post(
-                        "http://127.0.0.1:5750/atrust/proxy", json={"url": url, "key": "eya46_proxy_school"}
+                        "http://127.0.0.1:5750/atrust/proxy",
+                        json={"url": url, "key": "eya46_proxy_school"},
                     )
             data = resp.json()
             if data["success"] == 0:
                 return {
                     "url": data.get("url"),
                     "cookie": data.get("cookie"),
-                    "type": "atrust"
+                    "type": "atrust",
                 }
             else:
                 return data["msg"]
         else:
             if r:
-                resp = await r.post("http://127.0.0.1:5750/proxy_http", json={"key": "eya46_proxy_school"})
+                resp = await r.post(
+                    "http://127.0.0.1:5750/proxy_http",
+                    json={"key": "eya46_proxy_school"},
+                )
             else:
                 async with httpx.AsyncClient() as r:
-                    resp = await r.post("http://127.0.0.1:5750/proxy_http", json={"key": "eya46_proxy_school"})
+                    resp = await r.post(
+                        "http://127.0.0.1:5750/proxy_http",
+                        json={"key": "eya46_proxy_school"},
+                    )
             data = resp.json()
             if data["success"] == 0:
                 return {**data["data"], "type": "proxy"}
@@ -71,11 +79,18 @@ class Power(db.Model):
 
 async def saveElectRecord(room: str, elect: str):
     # 房间号相同，小时相同，电量相同就不添加
-    if len(await Power.query.where(and_(
-            Power.room == room,
-            Power.time >= datetime.now() - timedelta(hours=1),
-            Power.power == elect[:-1]
-    )).gino.all()) == 0:
+    if (
+        len(
+            await Power.query.where(
+                and_(
+                    Power.room == room,
+                    Power.time >= datetime.now() - timedelta(hours=1),
+                    Power.power == elect[:-1],
+                )
+            ).gino.all()
+        )
+        == 0
+    ):
         # logger.info("添加")
         await Power.create(room=room, power=elect[:-1])
     else:
@@ -97,7 +112,7 @@ async def getElectRecord(room: str) -> Optional[str]:
     if len(elects) == 0:
         return None
 
-    _temp = f"电费记录:\n"
+    _temp = "电费记录:\n"
 
     # Power.time.strftime("%Y-%m-%d %Hh")
     for i in elects[::-1]:
@@ -106,11 +121,8 @@ async def getElectRecord(room: str) -> Optional[str]:
     return _temp[:-1] if _temp.endswith("\n") else _temp
 
 
-async def getElect(room: str) -> (str, None):
-    _data = {
-        "funname": "synjones.onecard.query.elec.roominfo",
-        "json": "true"
-    }
+async def getElect(room: str) -> Optional[str]:
+    _data = {"funname": "synjones.onecard.query.elec.roominfo", "json": "true"}
 
     def cgdk():
         if len(room) == 5:
@@ -124,24 +136,37 @@ async def getElect(room: str) -> (str, None):
             building = f"{room[0]}号楼"
             buildingid = room[0]
 
-        return json.dumps({'query_elec_roominfo': {
-            'aid': '0030000000002501',
-            'account': '33333',
-            'room': {'roomid': room, 'room': room},
-            'floor': {'floorid': '', 'floor': ''},
-            'area': {'area': '1', 'areaname': ''},
-            'building': {'buildingid': buildingid, 'building': building}
-        }}, ensure_ascii=False)
+        return json.dumps(
+            {
+                "query_elec_roominfo": {
+                    "aid": "0030000000002501",
+                    "account": "33333",
+                    "room": {"roomid": room, "room": room},
+                    "floor": {"floorid": "", "floor": ""},
+                    "area": {"area": "1", "areaname": ""},
+                    "building": {"buildingid": buildingid, "building": building},
+                }
+            },
+            ensure_ascii=False,
+        )
 
     def sfdk():
-        return json.dumps({'query_elec_roominfo': {
-            'aid': '0030000000003801',
-            'account': '33333',
-            'room': {'roomid': '0' + room[1:4], 'room': room[1:4]},
-            'floor': {'floorid': '00' + room[1], 'floor': '00' + room[1]},
-            'area': {'area': '主校区', 'areaname': '主校区'},
-            'building': {'buildingid': '00' + room[0], 'building': room[0] + '号楼'}}
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "query_elec_roominfo": {
+                    "aid": "0030000000003801",
+                    "account": "33333",
+                    "room": {"roomid": "0" + room[1:4], "room": room[1:4]},
+                    "floor": {"floorid": "00" + room[1], "floor": "00" + room[1]},
+                    "area": {"area": "主校区", "areaname": "主校区"},
+                    "building": {
+                        "buildingid": "00" + room[0],
+                        "building": room[0] + "号楼",
+                    },
+                }
+            },
+            ensure_ascii=False,
+        )
 
     # 不同的电控系统
     if room[0] in ["1", "2", "3", "4", "5", "6", "10"]:
@@ -152,11 +177,12 @@ async def getElect(room: str) -> (str, None):
     try:
         url = "http://ykt.njpi.edu.cn:8988/web/Common/Tsm.html"
         proxy = await get_proxy_http(url=url)
-        if type(proxy) == str:
+        if isinstance(proxy, str):
             return proxy
         async with (
-                httpx.AsyncClient(verify=False, proxies=proxy) if proxy.get("type", "proxy") == "proxy"
-                else httpx.AsyncClient(verify=False)
+            httpx.AsyncClient(verify=False, proxies=proxy)
+            if proxy.get("type", "proxy") == "proxy"
+            else httpx.AsyncClient(verify=False)
         ) as client:
             res = await client.post(
                 # "http://ykt.njpi.edu.cn:8988/web/Common/Tsm.html",
@@ -165,10 +191,10 @@ async def getElect(room: str) -> (str, None):
                 url if proxy.get("type", "proxy") == "proxy" else proxy.get("url"),
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                    "Cookie": proxy.get("cookie")
+                    "Cookie": proxy.get("cookie"),
                 },
                 params=_data,
-                timeout=3
+                timeout=3,
             )
             if res.status_code == 502:
                 return "学付宝无法连接"
@@ -191,17 +217,14 @@ async def getElect(room: str) -> (str, None):
         return "报错"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import asyncio
 
-
     async def main():
-        from db import link_db, close_db
+        from db import close_db, link_db
+
         await link_db()
         print(await getElect("1145"))
         await close_db()
 
-
-    print(
-        asyncio.get_event_loop().run_until_complete(main())
-    )
+    print(asyncio.get_event_loop().run_until_complete(main()))

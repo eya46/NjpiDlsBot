@@ -14,9 +14,9 @@ def get_authorization():
 
 async def call_frp_api(api: str, port: int = 6688, ip: str = "127.0.0.1") -> Union[dict, list]:
     async with httpx.AsyncClient() as r:
-        return (await r.get(
-            f"http://{ip}:{port}/api/{api}",
-            headers={
-                "Authorization": f"Basic {get_authorization()}"
-            }
-        )).json()
+        return (
+            await r.get(
+                f"http://{ip}:{port}/api/{api}",
+                headers={"Authorization": f"Basic {get_authorization()}"},
+            )
+        ).json()

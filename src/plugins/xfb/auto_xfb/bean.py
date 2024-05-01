@@ -1,7 +1,8 @@
-from datetime import datetime, time, date
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 from db import db
-from sqlalchemy import Column, String, DateTime, Integer, Boolean, Time
 
 
 class AutoPower(db.Model):

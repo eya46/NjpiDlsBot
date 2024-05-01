@@ -13,7 +13,8 @@ async def _():
             r: AsyncClient
             try:
                 await ksj_60.send(
-                    MessageSegment.image(file=(await r.get("https://api.iyk0.com/60s")).json()["imageUrl"]))
+                    MessageSegment.image(file=(await r.get("https://api.iyk0.com/60s")).json()["imageUrl"])
+                )
                 return
             except:
                 pass

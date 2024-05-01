@@ -2,14 +2,15 @@ import asyncio
 import json
 import time
 from datetime import datetime
-from typing import Optional, Dict, Tuple, Union, Type
+from typing import Optional, Union
 
 from nonebot import logger
 from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot.internal.matcher import Matcher
-from playwright.async_api import Browser, Page, BrowserContext, Error
+from playwright.async_api import Browser, BrowserContext, Error, Page
 
 from api.atrust import url_to_proxy
+
 from .bean import Url
 from .browser import get_browser
 
@@ -32,7 +33,7 @@ class VPN:
         if not self._browser:
             self._browser = await get_browser(headless=True)
         if not self._context:
-            self._context = await self._browser.new_context(storage_state='context.json')
+            self._context = await self._browser.new_context(storage_state="context.json")
         return self._context
 
     async def get_page(self) -> Page:
@@ -44,7 +45,7 @@ class VPN:
     #     return self._page_alive
 
     async def save(self):
-        await (await self.get_context()).storage_state(path='context.json')
+        await (await self.get_context()).storage_state(path="context.json")
 
     def update_time(self):
         self.last_alive_time = str(datetime.now())[:-7]
@@ -54,34 +55,32 @@ class VPN:
         try:
             if await self.if_login():
                 try:
-                    await page.goto(
-                        f"https://at.njpi.edu.cn/?t={int(time.time() * 1000)}"
-                    )
+                    await page.goto(f"https://at.njpi.edu.cn/?t={int(time.time() * 1000)}")
                     await asyncio.sleep(3)
                     await page.request.get(url_to_proxy("https://www.baidu.com/"))
                 except Error:
-                    logger.debug(f"atrust VPN保活失败")
+                    logger.debug("atrust VPN保活失败")
                     return False
-                logger.debug(f"atrust VPN保活成功")
+                logger.debug("atrust VPN保活成功")
                 return True
             else:
-                logger.debug(f"atrust VPN保活失败")
+                logger.debug("atrust VPN保活失败")
                 return False
         finally:
             self.update_time()
             await page.close()
             await self.save()
 
-    async def login(self, matcher: Union[Matcher, Type[Matcher]]):
+    async def login(self, matcher: Union[Matcher, type[Matcher]]):
         if await self.if_login():
             return "已登陆"
         page = await self.get_page()
         await matcher.send("请用企业微信扫码(60s内)")
         try:
             await page.goto(Url.login.value)
-            img = "https:" + await page.frame_locator("#scan_qrcode_iframe") \
-                .frame_locator("iframe") \
-                .locator('//*[@id="wwopen.ssoPage_$"]/div/div/div[2]/div[1]/img').get_attribute("src")
+            img = "https:" + await page.frame_locator("#scan_qrcode_iframe").frame_locator("iframe").locator(
+                '//*[@id="wwopen.ssoPage_$"]/div/div/div[2]/div[1]/img'
+            ).get_attribute("src")
             await matcher.send(MessageSegment.image(img))
             start_time = time.time()
 
@@ -112,7 +111,7 @@ class VPN:
         except:
             return None
 
-    async def get_login_info(self) -> Tuple[bool, Dict[str, str]]:
+    async def get_login_info(self) -> tuple[bool, dict[str, str]]:
         try:
             resp = await (await self.get_context()).request.get(Url.onlineInfo.value)
             data = await resp.json()

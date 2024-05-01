@@ -4,7 +4,8 @@ from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot.internal.matcher import Matcher
 
 from api import Txt2Img, split
-from .tool import getElectRecord, saveElectRecord, getElect
+
+from .tool import getElect, getElectRecord, saveElectRecord
 
 
 def check_room(room):
@@ -52,9 +53,9 @@ async def check_power(matcher: Matcher, args: str):
         return
     elect = await getElect(room)
     if elect is None or "超时" in elect or "报错" in elect or "关闭" in elect:
-        await matcher.send(f'学付宝寄了 -> {elect}', at_sender=True)
+        await matcher.send(f"学付宝寄了 -> {elect}", at_sender=True)
     elif len(elect.split("电量")) < 2:
-        await matcher.send(f'查询结果:\n{elect}', at_sender=True)
+        await matcher.send(f"查询结果:\n{elect}", at_sender=True)
     else:
         extra_message = ""
         if len(elect.split("电量为")) < 2:
@@ -63,7 +64,10 @@ async def check_power(matcher: Matcher, args: str):
                     extra_message = "\n听机器人一句劝，赶紧充电费"
             except:
                 pass
-            await matcher.send(f'查询结果:\n房间剩余电量为{elect.split("电量")[1]}{extra_message}', at_sender=True)
+            await matcher.send(
+                f'查询结果:\n房间剩余电量为{elect.split("电量")[1]}{extra_message}',
+                at_sender=True,
+            )
             await saveElectRecord(room, elect.split("电量")[1])
         else:
             try:
@@ -71,7 +75,10 @@ async def check_power(matcher: Matcher, args: str):
                     extra_message = "\n听机器人一句劝，赶紧充电费"
             except:
                 pass
-            await matcher.send(f'查询结果:\n房间剩余电量为{elect.split("电量为")[1]}{extra_message}', at_sender=True)
+            await matcher.send(
+                f'查询结果:\n房间剩余电量为{elect.split("电量为")[1]}{extra_message}',
+                at_sender=True,
+            )
             await saveElectRecord(room, elect.split("电量为")[1])
 
 
@@ -81,9 +88,9 @@ async def get_record_app(room: Union[str, int]) -> dict:
         room = check_room(room)
         elect = await getElect(room)
         if elect is None or "超时" in elect or "报错" in elect or "关闭" in elect:
-            res = f'学付宝寄了 -> {elect}'
+            res = f"学付宝寄了 -> {elect}"
         elif len(elect.split("电量")) < 2:
-            res = f'查询结果:\n{elect}'
+            res = f"查询结果:\n{elect}"
         else:
             extra_message = ""
             if len(elect.split("电量为")) < 2:
@@ -107,4 +114,7 @@ async def get_record_app(room: Union[str, int]) -> dict:
     except ValueError:
         res = "房间号错误"
 
-    return {"data": res, "power": float(power[:-1]) if isinstance(power, str) else -99999}
+    return {
+        "data": res,
+        "power": float(power[:-1]) if isinstance(power, str) else -99999,
+    }

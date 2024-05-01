@@ -1,5 +1,9 @@
 from nonebot import get_driver
-from nonebot.adapters.onebot.v11 import MessageEvent, GroupMessageEvent, PrivateMessageEvent
+from nonebot.adapters.onebot.v11 import (
+    GroupMessageEvent,
+    MessageEvent,
+    PrivateMessageEvent,
+)
 from nonebot.exception import IgnoredException
 from nonebot.message import event_preprocessor
 
@@ -15,7 +19,7 @@ async def check_ban(evnet: MessageEvent):
         return
 
     if isinstance(evnet, GroupMessageEvent):
-        if await get_key(f"ban_group") == "on":
+        if await get_key("ban_group") == "on":
             raise IgnoredException("群聊禁用阶段")
 
         ban_type = await get_key("ban_type")
@@ -28,5 +32,5 @@ async def check_ban(evnet: MessageEvent):
                 raise IgnoredException(f"黑名单禁用阶段,黑名单群:{evnet.group_id}")
 
     if isinstance(evnet, PrivateMessageEvent):
-        if await get_key(f"ban_private") == "on":
+        if await get_key("ban_private") == "on":
             raise IgnoredException("私聊禁用阶段")

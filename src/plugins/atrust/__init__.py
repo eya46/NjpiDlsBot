@@ -4,14 +4,13 @@ from urllib.parse import urlparse
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
-from nonebot import on_command, require, get_app, logger
+from nonebot import get_app, logger, on_command, require
 from nonebot.internal.matcher import Matcher
 from nonebot.permission import SUPERUSER
 
-from .bean import Url
-from .browser import get_browser
-from .main import VPN
 from api.atrust import url_to_proxy
+
+from .main import VPN
 
 login_vpn = on_command("登录VPN", aliases={"登录vpn", "登陆VPN", "登陆vpn"})
 vpn_status = on_command("vpn状态", aliases={"VPN状态"}, permission=SUPERUSER)
@@ -47,16 +46,18 @@ async def vpn_re_handle():
 
 @vpn_status.handle()
 async def vpn_status_handle():
-    last_alive_time = vpn.last_alive_time or '无'
+    last_alive_time = vpn.last_alive_time or "无"
     if_login, info = await vpn.get_login_info()
     logger.debug("登陆信息如下:")
     logger.debug(info)
     data = info.get("data", {})
-    msg = f"状态:{'已登陆' if if_login else '未登陆'}\n" + \
-          f"页面数:{len((await vpn.get_context()).pages)}\n" + \
-          f'登陆时间:{data.get("loginTime", "无")}\n' + \
-          f"更新时间:{last_alive_time}\n" \
-          f'认证方式:{data.get("authType", "未知")}[{data.get("domain", "未知")}]'
+    msg = (
+        f"状态:{'已登陆' if if_login else '未登陆'}\n"
+        + f"页面数:{len((await vpn.get_context()).pages)}\n"
+        + f'登陆时间:{data.get("loginTime", "无")}\n'
+        + f"更新时间:{last_alive_time}\n"
+        f'认证方式:{data.get("authType", "未知")}[{data.get("domain", "未知")}]'
+    )
 
     await vpn_status.send(msg)
 
@@ -70,7 +71,10 @@ async def get_proxy(data: dict):
     if key not in keys:
         return {"success": -2, "msg": "key错误"}
     if 0 <= datetime.now().hour <= 6:
-        return {"success": -5, "msg": "太晚喽，学校VPN睡觉去了\n不像机器人我，7*24h工作QwQ~"}
+        return {
+            "success": -5,
+            "msg": "太晚喽，学校VPN睡觉去了\n不像机器人我，7*24h工作QwQ~",
+        }
 
     if not await vpn.if_login():
         return {"success": -3, "msg": "vpn未登陆,请发送 登录VPN"}
@@ -78,23 +82,13 @@ async def get_proxy(data: dict):
         cookie = await vpn.get_cookie()
     except Exception as e:
         logger.error(e)
-        return {
-            "success": -5,
-            "msg": "获取cookie报错"
-        }
+        return {"success": -5, "msg": "获取cookie报错"}
     if cookie:
-        if not urlparse(url).hostname.endswith('atrust.njpi.edu.cn'):  # type: ignore
+        if not urlparse(url).hostname.endswith("atrust.njpi.edu.cn"):  # type: ignore
             url = url_to_proxy(url)
-        return {
-            "success": 0,
-            "url": url,
-            "cookie": cookie
-        }
+        return {"success": 0, "url": url, "cookie": cookie}
     else:
-        return {
-            "success": -4,
-            "msg": "获取cookie失败"
-        }
+        return {"success": -4, "msg": "获取cookie失败"}
 
 
 @login_vpn.handle()

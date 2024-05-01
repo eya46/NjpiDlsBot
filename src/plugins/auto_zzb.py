@@ -1,8 +1,8 @@
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from nonebot import require, get_bot
+from nonebot import get_bot, require
 from nonebot.adapters.onebot.v11 import Bot
 
 from db import get_key
@@ -14,7 +14,7 @@ zzb_date = datetime(2024, 3, 19, 9, 0, 0)
 groups = []
 
 
-@scheduler.scheduled_job('cron', day="*", hour=8, minute=5, name="每日专本日期播报", timezone='Asia/Shanghai')
+@scheduler.scheduled_job("cron", day="*", hour=8, minute=5, name="每日专本日期播报", timezone="Asia/Shanghai")
 async def auto_send_zzb_time():
     bot: Bot = get_bot()
     left_time = zzb_date - datetime.now()
@@ -25,14 +25,14 @@ async def auto_send_zzb_time():
         try:
             await bot.send_group_msg(
                 group_id=i,
-                message=f"{datetime.now().year}转本还剩约 {left_time.days} 天~"
+                message=f"{datetime.now().year}转本还剩约 {left_time.days} 天~",
             )
         except:
             pass
 
 
 # @scheduler.scheduled_job("interval", hours=2, timezone='Asia/Shanghai', name="自动改转转本时间")
-@scheduler.scheduled_job("cron", day="*", hour=3, timezone='Asia/Shanghai', name="自动改转转本时间")
+@scheduler.scheduled_job("cron", day="*", hour=3, timezone="Asia/Shanghai", name="自动改转转本时间")
 async def auto_set_group_name_to_zzb_time():
     bot: Optional[Bot] = get_bot()
     if bot is None:
@@ -50,7 +50,7 @@ async def auto_set_group_name_to_zzb_time():
                 await bot.set_group_card(
                     group_id=gid,
                     user_id=int(bot.self_id),
-                    card=f"bot-dls {datetime.now().year % 2000}转本:{left_time.days + 1}天"
+                    card=f"bot-dls {datetime.now().year % 2000}转本:{left_time.days + 1}天",
                 )
             except:
                 pass

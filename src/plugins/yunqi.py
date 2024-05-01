@@ -9,23 +9,22 @@ cyq = on_fullmatch(("每日运气", "今日运气"), priority=99)
 
 scheduler = require("nonebot_plugin_apscheduler").scheduler
 
-cyq_data = {
-
-}
+cyq_data = {}
 
 
 @scheduler.scheduled_job("cron", hour=0, minute=0)
 async def reset_cyq_data():
     global cyq_data
-    cyq_data = dict()
+    cyq_data = {}
 
 
 @cyq.handle()
 async def cyq_handle(event: MessageEvent):
     global cyq_data
     if (
-            (fake_yunqi := await get_key(f"fake_yunqi_{event.user_id}")) is not None and
-            fake_yunqi.isdigit() and (cyq_data.get(event.user_id) is None or cyq_data[event.user_id] < int(fake_yunqi))
+        (fake_yunqi := await get_key(f"fake_yunqi_{event.user_id}")) is not None
+        and fake_yunqi.isdigit()
+        and (cyq_data.get(event.user_id) is None or cyq_data[event.user_id] < int(fake_yunqi))
     ):
         cyq_data[event.user_id] = randint(int(fake_yunqi), max(100, int(fake_yunqi)))
 
